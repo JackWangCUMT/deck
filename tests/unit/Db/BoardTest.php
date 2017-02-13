@@ -20,8 +20,8 @@ class BoardTest extends \PHPUnit_Framework_TestCase {
 			'title' => "My Board",
 			'owner' => "admin",
 			'color' => "000000",
-			'labels' => null,
-			'acl' => null
+			'labels' => array(),
+			'acl' => array()
 		], $board->jsonSerialize());
 	}
 
@@ -34,7 +34,7 @@ class BoardTest extends \PHPUnit_Framework_TestCase {
 			'owner' => "admin",
 			'color' => "000000",
 			'labels' => array("foo", "bar"),
-			'acl' => null
+			'acl' => array()
 		], $board->jsonSerialize());
 	}
 	public function testSetAcl() {
@@ -53,8 +53,8 @@ class BoardTest extends \PHPUnit_Framework_TestCase {
 			'title' => "My Board",
 			'owner' => "admin",
 			'color' => "000000",
-			'labels' => null,
-			'acl' => null,
+			'labels' => array(),
+			'acl' => array(),
 			'shared' => 1,
 		], $board->jsonSerialize());
 	}

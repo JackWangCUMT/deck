@@ -24,10 +24,12 @@
 namespace OCA\Deck\Controller;
 
 use OCA\Deck\Db\Acl;
+use OCA\Deck\Db\Group;
+use OCA\Deck\Db\User;
 use OCP\IGroup;
 use OCP\IUser;
 
-class ShareControllerTest extends \PHPUnit_Framework_TestCase {
+class ShareControllerTest extends \Test\TestCase {
 
 	private $controller;
 	private $request;
@@ -46,24 +48,14 @@ class ShareControllerTest extends \PHPUnit_Framework_TestCase {
 			'\OCP\IRequest')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->userManager = $this->getMockBuilder(
-			'\OCP\IUserManager')
-			->disableOriginalConstructor()
-			->getMock();
-		$this->groupManager = $this->getMockBuilder(
-			'\OCP\IGroupManager')
-			->disableOriginalConstructor()
-			->getMock();
+		$this->userManager = $this->createMock('\OCP\IUserManager');
+		$this->groupManager = $this->createMock('\OCP\IGroupManager');
 		$this->boardService = $this->getMockBuilder(
 			'\OCA\Deck\Service\BoardService')
 			->disableOriginalConstructor()
 			->getMock();
-
 		$this->groupManager->method('getUserGroupIds')
 			->willReturn(['admin', 'group1', 'group2']);
-		$this->userManager->method('get')
-			->with($this->userId)
-			->willReturn('user');
 
 		$this->controller = new ShareController(
 			'deck',
@@ -77,17 +69,17 @@ class ShareControllerTest extends \PHPUnit_Framework_TestCase {
 
 
 	public function testSearchGroup() {
-		$group = $this->getMockBuilder(IGroup::class)
-			->disableOriginalConstructor()
-			->getMock();
-		$group->expects($this->once())
+		$group = $this->createMock(IGroup::class);
+		$group->expects($this->any())
 			->method('getGID')
 			->willReturn('foo');
 		$groups = [$group];
 		$this->groupManager->expects($this->once())
 			->method('search')
-			->with('foo')
 			->willReturn($groups);
+		$this->groupManager->expects($this->any())
+			->method('get')
+			->willReturn($group);
 		$this->userManager->expects($this->once())
 			->method('searchDisplayName')
 			->willReturn([]);
@@ -99,12 +91,13 @@ class ShareControllerTest extends \PHPUnit_Framework_TestCase {
 		$acl->setPermissionEdit(true);
 		$acl->setPermissionShare(true);
 		$acl->setPermissionManage(true);
+		$acl->resolveRelation('participant', function($value) use ($group) {
+			return new Group($group);
+		});
 		$this->assertEquals([$acl], $actual);
 	}
 	public function testSearchUser() {
-		$user = $this->getMockBuilder(IUser::class)
-			->disableOriginalConstructor()
-			->getMock();
+		$user = $this->createMock(IUser::class);
 		$user->expects($this->any())
 			->method('getUID')
 			->willReturn('foo');
@@ -112,11 +105,12 @@ class ShareControllerTest extends \PHPUnit_Framework_TestCase {
 		$this->groupManager->expects($this->once())
 			->method('search')
 			->willReturn([]);
-
-		$this->userManager->expects($this->once())
+		$this->userManager->expects($this->any())
 			->method('searchDisplayName')
-			->with('foo')
 			->willReturn($users);
+		$this->userManager->expects($this->any())
+			->method('get')
+			->willReturn($user);
 		$actual = $this->controller->searchUser('foo');
 
 		$acl = new Acl();
@@ -125,7 +119,10 @@ class ShareControllerTest extends \PHPUnit_Framework_TestCase {
 		$acl->setPermissionEdit(true);
 		$acl->setPermissionShare(true);
 		$acl->setPermissionManage(true);
-		$this->assertEquals([$acl], $actual);
+		$acl->resolveRelation('participant', function($value) use ($user) {
+			return new User($user);
+		});
+		$this->assertEquals([0 => $acl], $actual);
 	}
 
 	public function testSearchUserExcludeOwn() {
@@ -133,7 +130,7 @@ class ShareControllerTest extends \PHPUnit_Framework_TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 		$user->expects($this->any())
-			->method('getUID')
+			->method('getUid')
 			->willReturn('user');
 		$users = [$user];
 		$this->groupManager->expects($this->once())

@@ -37,7 +37,7 @@ app.factory('BoardService', function(ApiService, $http, $q){
             angular.forEach(response.data, function(item) {
                 var exists = false;
                 angular.forEach(self.getCurrent().acl, function(acl) {
-                    if (acl.participant === item.participant) {
+                    if (acl.participant.primaryKey === item.participant.primaryKey) {
                         exists = true;
                     }
                 });
@@ -59,7 +59,7 @@ app.factory('BoardService', function(ApiService, $http, $q){
         var self = this;
         var _acl = acl;
         $http.post(this.baseUrl + '/' + acl.boardId + '/acl', _acl).then(function (response) {
-            if(!board.acl) {
+            if(!board.acl || board.acl.length === 0) {
                 board.acl = {};
             }
             board.acl[response.data.id] = response.data;

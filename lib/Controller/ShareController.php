@@ -25,6 +25,8 @@ namespace OCA\Deck\Controller;
 
 use OCA\Deck\Db\Acl;
 
+use OCA\Deck\Db\Group;
+use OCA\Deck\Db\User;
 use OCA\Deck\Service\BoardService;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -53,9 +55,14 @@ class ShareController extends Controller {
 	 * @return array
 	 */
 	public function searchUser($search) {
-		$limit = 3;
+		if($search==='%') {
+			$search = '';
+		}
+		$limit = 5;
 		$offset = null;
 		$result = [];
+		$userManager = $this->userManager;
+		$groupManager = $this->groupManager;
 		foreach ($this->groupManager->search($search, $limit, $offset) as $idx => $group) {
 			$acl = new Acl();
 			$acl->setType('group');
@@ -63,9 +70,11 @@ class ShareController extends Controller {
 			$acl->setPermissionEdit(true);
 			$acl->setPermissionShare(true);
 			$acl->setPermissionManage(true);
+			$acl->resolveRelation('participant', function($value) use (&$acl, &$userManager, &$groupManager) {
+				return new Group($groupManager->get($value));
+			});
 			$result[] = $acl;
 		}
-		$limit = 10;
 		foreach ($this->userManager->searchDisplayName($search, $limit, $offset) as $idx => $user) {
 			if ($user->getUID() === $this->userId) {
 							continue;
@@ -76,6 +85,9 @@ class ShareController extends Controller {
 			$acl->setPermissionEdit(true);
 			$acl->setPermissionShare(true);
 			$acl->setPermissionManage(true);
+			$acl->resolveRelation('participant', function($value) use (&$acl, &$userManager, &$groupManager) {
+				return new User($userManager->get($value));
+			});
 			$result[] = $acl;
 		}
 		return $result;

@@ -26,7 +26,7 @@ return [
 		['name' => 'page#index', 'url' => '/', 'verb' => 'GET'],
 
 		// share
-		['name' => 'share#searchUser', 'url' => '/share/search/{search}', 'verb' => 'GET'],
+		['name' => 'share#searchUser', 'url' => '/share/search/{search}', 'verb' => 'GET', 'defaults' => ['search' => '']],
 
 		// boards
 		['name' => 'board#index', 'url' => '/boards', 'verb' => 'GET'],

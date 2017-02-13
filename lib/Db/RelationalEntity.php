@@ -31,9 +31,11 @@
 namespace OCA\Deck\Db;
 
 
-class RelationalEntity extends \OCP\AppFramework\Db\Entity {
+class RelationalEntity extends \OCP\AppFramework\Db\Entity implements \JsonSerializable {
 
+	private $primaryKey;
 	private $_relations = array();
+	private $_resolvedProperties = [];
 
 	/**
 	 * Mark a property as relation so it will not get updated using Mapper::update
@@ -44,6 +46,11 @@ class RelationalEntity extends \OCP\AppFramework\Db\Entity {
 			$this->_relations[] = $property;
 		}
 	}
+
+	public function addResolvable($property) {
+		$this->_resolvedProperties[$property] = null;
+	}
+
 	/**
 	 * Mark am attribute as updated
 	 * overwritten from \OCP\AppFramework\Db\Entity to avoid writing relational attributes
@@ -56,4 +63,42 @@ class RelationalEntity extends \OCP\AppFramework\Db\Entity {
 		}
 	}
 
+	public function resolveRelation($property, $resolver) {
+		if($property !== null && $this->$property !== null) {
+			$result = $resolver($this->$property);
+		} else {
+			$result = null;
+		}
+
+		if($result instanceof RelationalObject || $result === null) {
+			$this->_resolvedProperties[$property] = $result;
+		} else {
+			throw new \Exception('resolver must return an instance of RelationalObject');
+		}
+	}
+
+	public function __call($methodName, $args){
+		$attr = lcfirst( substr($methodName, 7) );
+		if(strpos($methodName, 'resolve') === 0 && array_key_exists($attr, $this->_resolvedProperties)) {
+			if($this->_resolvedProperties[$attr] !== null) {
+				return $this->_resolvedProperties[$attr];
+			} else {
+				return $this->getter($attr, $args);
+			}
+		}
+
+		$attr = lcfirst( substr($methodName, 3) );
+		if(strpos($methodName, 'set') === 0 && array_key_exists($attr, $this->_resolvedProperties)) {
+			if(!is_scalar($args[0])) {
+				$args[0] = $args[0]['primaryKey'];
+				parent::setter($attr, $args);
+			}
+			parent::setter($attr, $args);
+		}
+		return parent::__call($methodName, $args);
+	}
+
+	public function jsonSerialize() {
+		return [];
+	}
 }
