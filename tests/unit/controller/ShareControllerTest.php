@@ -91,7 +91,7 @@ class ShareControllerTest extends \Test\TestCase {
 		$acl->setPermissionEdit(true);
 		$acl->setPermissionShare(true);
 		$acl->setPermissionManage(true);
-		$acl->resolveRelation('participant', function($value) use ($group) {
+		$acl->resolveRelation('participant', function($participant) use ($group) {
 			return new Group($group);
 		});
 		$this->assertEquals([$acl], $actual);
@@ -119,7 +119,7 @@ class ShareControllerTest extends \Test\TestCase {
 		$acl->setPermissionEdit(true);
 		$acl->setPermissionShare(true);
 		$acl->setPermissionManage(true);
-		$acl->resolveRelation('participant', function($value) use ($user) {
+		$acl->resolveRelation('participant', function($participant) use ($user) {
 			return new User($user);
 		});
 		$this->assertEquals([0 => $acl], $actual);
