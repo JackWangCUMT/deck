@@ -21,7 +21,7 @@ before_script:
     - make install-deps 
 
 script:
-    - make test
+    - make test-unit
 
 after_failure:
     - cat ../../data/nextcloud.log
